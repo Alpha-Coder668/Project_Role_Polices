@@ -3,7 +3,6 @@
         <h2 class="text-lg font-medium text-gray-900">
             {{ __('Profile Information') }}
         </h2>
-
         <p class="mt-1 text-sm text-gray-600">
             {{ __("Update your account's profile information and email address.") }}
         </p>
@@ -13,7 +12,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form id="profile-form" method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
         @csrf
         @method('patch')
 
@@ -28,11 +27,10 @@
             <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
 
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
+            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail())
                 <div>
                     <p class="text-sm mt-2 text-gray-800">
                         {{ __('Your email address is unverified.') }}
-
                         <button form="send-verification" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             {{ __('Click here to re-send the verification email.') }}
                         </button>
@@ -45,6 +43,17 @@
                     @endif
                 </div>
             @endif
+        </div>
+
+        <div>
+            <x-input-label for="profile_image" :value="__('Profile Image')" />
+            <input type="file" id="profile_image" name="profile_image" accept="image/*" class="mt-1 block w-full" />
+            <x-input-error class="mt-2" :messages="$errors->get('profile_image')" />
+            <div id="image-preview" class="mt-2">
+                @if ($user->profile_image)
+                    <img src="{{ asset('storage/' . $user->profile_image) }}" alt="Profile Image" class="h-32 w-32 rounded-full">
+                @endif
+            </div>
         </div>
 
         <div class="flex items-center gap-4">
@@ -61,4 +70,41 @@
             @endif
         </div>
     </form>
+    <script>
+   document.addEventListener('DOMContentLoaded', function () {
+    const profileImageInput = document.getElementById('profile_image');
+    const imagePreview = document.getElementById('image-preview');
+
+    profileImageInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('profile_image', file);
+
+            // AJAX request to upload the image
+            fetch('{{ route('profile.image.upload') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the image preview
+                    imagePreview.innerHTML = `<img src="${data.image_url}" alt="Profile Image" class="h-32 w-32 rounded-full">`;
+                } else {
+                    alert('Image upload failed.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    });
+});
+
+</script>
+
 </section>

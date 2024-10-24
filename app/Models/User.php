@@ -22,6 +22,9 @@ class User extends Authenticatable
         'email',
         'password',
     ];
+    protected $casts = [
+        'is_admin' => 'boolean',
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -44,5 +47,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function products()
+    {
+        return $this->hasMany(Product::class);
     }
 }

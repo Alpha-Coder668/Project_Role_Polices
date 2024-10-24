@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use App\Http\Requests\ProfileUpdateRequest;
 
 class ProfileController extends Controller
 {
@@ -57,4 +58,30 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'profile_image' => 'nullable|image|max:2048', // Validate image
+        ]);
+    
+        $user = Auth::user();
+        
+        if ($request->hasFile('profile_image')) {
+            // Delete the old image if exists
+            if ($user->profile_image) {
+                Storage::delete($user->profile_image);
+            }
+    
+            // Store the new image
+            $path = $request->file('profile_image')->store('profile_images', 'public');
+            $user->profile_image = $path;
+            $user->save();
+    
+            return response()->json(['success' => true, 'image_url' => asset('storage/' . $path)]);
+        }
+    
+        return response()->json(['success' => false]);
+    }
+    
 }
